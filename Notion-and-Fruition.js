@@ -17,12 +17,12 @@
     'ateliers': 'd92b7fb981df42caad6d9e9ed5507c21',
     'ressources': '9a8ace54b67c4611b93ead8db1b67c19',
     'ecosysteme': '5eaac9ee15784ae6b0ab012c2c999b59',
-    'contribuer': '85044f022e8d460789f89d5ded990f2f',
+    'contribuer': '85044f022e8d460789f89d5ded990f2f',  
   };
 
   /* Step 3: enter your page title and description for SEO purposes */
-const PAGE_TITLE = 'Vivre reliés ♾';
-const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rénégérer nos liens à soi, aux autres, à la Nature et à plus grand que soi';
+  const PAGE_TITLE = 'Vivre reliés ♾';
+  const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rénégérer nos liens à soi, aux autres, à la Nature et à plus grand que soi';
 
   /*
    * Step 3.1: enter per-page metadata for better SEO (optional)
@@ -58,7 +58,6 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
           "description":  "Découvrir les acteurs et lieux derrière Vivre reliés et sa carte."
       }
   };
-
   /*
    * Step 3.2: structured data configuration for rich search results (optional)
    * Enable to add JSON-LD schema markup to your pages
@@ -81,7 +80,7 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
    * Step 3.3.1: social preview configuration (optional)
    * Enhance Open Graph and Twitter Card meta tags for better link previews
    */
-  const DEFAULT_OG_IMAGE = 'https://www.notion.so/image/https%3A%2F%2Fs3-us-west-2.amazonaws.com%2Fsecure.notion-static.com%2F1c52de65-79a8-47ec-aa7e-89c0300f780c%2Fvivre-relies_couverture_hd_dessin_logo.png?table=block&id=fe478512-9e76-4baf-85f5-4bb86cad7d1e&spaceId=c3cb526e-ed16-4d52-9dbf-e74abec558a6&width=2000&userId=f1763cda-e3a4-4313-98ec-78e0f4ac5d3b&cache=v2';
+  const DEFAULT_OG_IMAGE = '';
   const OG_IMAGE_WIDTH = 1200;
   const OG_IMAGE_HEIGHT = 630;
   const TWITTER_CARD_TYPE = 'summary_large_image';
@@ -119,7 +118,7 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
    * Step 3.7: custom 404 page configuration (optional)
    * Specify a Notion page ID to display when a page is not found
    */
-  const CUSTOM_404_PAGE_ID = 'fe4785129e764baf85f54bb86cad7d1e';
+  const CUSTOM_404_PAGE_ID = '';
 
   /*
    * Step 3.7: subdomain redirect configuration (optional)
@@ -144,6 +143,22 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
   const RSS_DESCRIPTION = '';
   const RSS_LANGUAGE = 'en-us';
 
+  /*
+   * Step 3.10: Internationalization (i18n) configuration (optional)
+   * Add hreflang tags for multilingual SEO
+   */
+  const I18N_ENABLED = false;
+  const DEFAULT_LOCALE = 'fr';
+
+  /*
+   * Step 3.11: Dynamic OG Image Generation (optional)
+   * Auto-generate Open Graph images from page titles
+   */
+  const OG_IMAGE_GENERATION_ENABLED = false;
+  const OG_IMAGE_BG_COLOR = '#1a1a2e';
+  const OG_IMAGE_TEXT_COLOR = '#ffffff';
+  const OG_IMAGE_FONT_SIZE = 64;
+
   /* Step 4: enter a Google Font name, you can choose from https://fonts.google.com */
   const GOOGLE_FONT = 'Plus Jakarta Sans';
 
@@ -157,7 +172,7 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
    * Requires Image Resizing to be enabled in Cloudflare dashboard
    * See: https://developers.cloudflare.com/images/transform-images/transform-via-workers/
    */
-  const IMAGE_OPTIMIZATION = `none`;
+  const IMAGE_OPTIMIZATION = ``;
   // If you choose 'resize' above, configure the options below
   const IMAGE_RESIZE_OPTIONS = {
     width: undefined,
@@ -280,6 +295,40 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
       .replace(/'/g, '&apos;');
   }
 
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function generateOgImage(slug) {
+    const metadata = PAGE_METADATA[slug] || {};
+    const title = metadata.title || PAGE_TITLE || MY_DOMAIN;
+    const siteName = SITE_NAME || MY_DOMAIN;
+    const escapedTitle = escapeHtml(title);
+    const escapedSiteName = escapeHtml(siteName);
+
+    const svg = `<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="${OG_IMAGE_BG_COLOR}"/>
+      <text x="100" y="280" font-size="${OG_IMAGE_FONT_SIZE}" fill="${OG_IMAGE_TEXT_COLOR}" font-family="system-ui, -apple-system, sans-serif" font-weight="bold">
+        ${escapedTitle.length > 40 ? escapedTitle.substring(0, 40) + '...' : escapedTitle}
+      </text>
+      <text x="100" y="550" font-size="32" fill="${OG_IMAGE_TEXT_COLOR}" font-family="system-ui, -apple-system, sans-serif" opacity="0.7">
+        ${escapedSiteName}
+      </text>
+    </svg>`;
+
+    return new Response(svg, {
+      headers: {
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'public, max-age=604800',
+      },
+    });
+  }
+
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, HEAD, POST, PUT, OPTIONS',
@@ -304,23 +353,18 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
     }
   }
 
-  // Extract Notion site domain from the original Notion URL
   const NOTION_SITE_DOMAIN = (() => {
     try {
-      const notionHost = new URL('https://philipb.notion.site/Vivre-reli-s-fe4785129e764baf85f54bb86cad7d1e?source=copy_link').hostname;
-      return notionHost;
+      return new URL('https://succinct-scar-f20.notion.site/Sample-Web-Site-148f2fc322e74473a91fb4d90836e3ce').hostname;
     } catch {
       return 'www.notion.so';
     }
   })();
 
-  // Rewrite domain references in API response body
   function rewriteDomainInBody(body) {
-    // Replace *.notion.site domain with custom domain
-    let result = body.replace(/[a-z0-9-]+\.notion\.site/g, MY_DOMAIN);
-    // Also replace www.notion.so references
-    result = result.replace(/www\.notion\.so/g, MY_DOMAIN);
-    return result;
+    return body
+      .replace(/[a-z0-9-]+\.notion\.site/g, MY_DOMAIN)
+      .replace(/www\.notion\.so/g, MY_DOMAIN);
   }
 
   async function fetchAndApply(request) {
@@ -369,16 +413,15 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
       response.headers.set('content-type', 'application/rss+xml; charset=utf-8');
       return response;
     }
+    // Handle dynamic OG image generation (Issue #36)
+    if (url.pathname.startsWith('/og-image/') && OG_IMAGE_GENERATION_ENABLED) {
+      const slug = url.pathname.replace('/og-image/', '');
+      return generateOgImage(slug);
+    }
     let response;
-    if (url.pathname.startsWith('/app') && url.pathname.endsWith('js')) {
-      response = await fetch(url.toString());
-      let body = await response.text();
-      body = rewriteDomainInBody(body);
-      response = new Response(body, response);
-      response.headers.set('Content-Type', 'application/x-javascript');
-      return applyCacheHeaders(response, url, 'application/javascript');
-    } else if (url.pathname.startsWith('/_assets/') && url.pathname.endsWith('.js')) {
-      // Handle Notion's new asset paths
+    const isAppJs = url.pathname.startsWith('/app') && url.pathname.endsWith('js');
+    const isAssetJs = url.pathname.startsWith('/_assets/') && url.pathname.endsWith('.js');
+    if (isAppJs || isAssetJs) {
       response = await fetch(url.toString());
       let body = await response.text();
       body = rewriteDomainInBody(body);
@@ -415,26 +458,7 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
       response.headers.set('Access-Control-Allow-Origin', '*');
       response.headers.delete('Content-Security-Policy');
       return response;
-    } else if (url.pathname.startsWith('/api/v3/syncRecordValuesMain') ||
-               url.pathname.startsWith('/api/v3/syncRecordValuesSpaceInitial') ||
-               url.pathname.startsWith('/api/v3/getPublicSpaceData')) {
-      // Rewrite domain info in sync/space API responses to prevent redirect
-      response = await fetch(url.toString(), {
-        body: request.body,
-        headers: {
-          'content-type': 'application/json;charset=UTF-8',
-          'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        },
-        method: 'POST',
-      });
-      let body = await response.text();
-      body = rewriteDomainInBody(body);
-      response = new Response(body, response);
-      response.headers.set('Access-Control-Allow-Origin', '*');
-      response.headers.delete('Content-Security-Policy');
-      return response;
-    } else if ((url.pathname.startsWith('/api'))) {
-      // Forward other API requests
+    } else if (url.pathname.startsWith('/api')) {
       response = await fetch(url.toString(), {
         body: request.body,
         headers: {
@@ -454,7 +478,7 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
       return applyCacheHeaders(response, url, 'image');
     } else if (slugs.indexOf(url.pathname.slice(1)) > -1) {
       const pageId = SLUG_TO_PAGE[url.pathname.slice(1)];
-       return Response.redirect('https://' + MY_DOMAIN + '/' + pageId, 302);
+      return Response.redirect('https://' + MY_DOMAIN + '/' + pageId, 302);
     } else {
       response = await fetch(url.toString(), {
         body: request.body,
@@ -486,7 +510,8 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
     }
 
     // Get current slug from page ID for canonical URL
-    const pageId = url.pathname.slice(-32);
+    const pageIdMatch = url.pathname.match(/[0-9a-f]{32}/);
+    const pageId = pageIdMatch ? pageIdMatch[0] : '';
     const currentSlug = PAGE_TO_SLUG[pageId] || '';
 
     return appendJavascript(response, SLUG_TO_PAGE, currentSlug, url);
@@ -643,6 +668,31 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
         element.append(`<meta property="og:locale" content="${OG_LOCALE}">`, { html: true });
       }
 
+      // Add auto-generated OG image if no custom image is set (Issue #36)
+      if (!effectiveOgImage && OG_IMAGE_GENERATION_ENABLED) {
+        const generatedUrl = `https://${MY_DOMAIN}/og-image/${this.slug}`;
+        element.append(`<meta property="og:image" content="${generatedUrl}">`, { html: true });
+        element.append(`<meta property="og:image:width" content="1200">`, { html: true });
+        element.append(`<meta property="og:image:height" content="630">`, { html: true });
+        element.append(`<meta name="twitter:image" content="${generatedUrl}">`, { html: true });
+      }
+
+      // Add hreflang tags for multilingual SEO (Issue #35)
+      if (I18N_ENABLED) {
+        // Self-referencing hreflang for current page
+        element.append(`<link rel="alternate" hreflang="${DEFAULT_LOCALE}" href="${canonicalUrl}">`, { html: true });
+
+        // Add alternate language versions from page metadata
+        const pageAlternates = this.metadata.alternates || [];
+        for (const alt of pageAlternates) {
+          const href = alt.url || `https://${MY_DOMAIN}${alt.slug}`;
+          element.append(`<link rel="alternate" hreflang="${alt.locale}" href="${href}">`, { html: true });
+        }
+
+        // x-default for language/region selector pages
+        element.append(`<link rel="alternate" hreflang="x-default" href="${canonicalUrl}">`, { html: true });
+      }
+
       // Add AI crawler attribution meta tags (Issue #13)
       if (AI_ATTRIBUTION !== '') {
         element.append(`<meta name="ai:source_url" content="${canonicalUrl}">`, { html: true });
@@ -730,7 +780,8 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
         PAGE_TO_SLUG[page] = slug;
       });
       function getPage() {
-        return location.pathname.slice(-32);
+        const match = location.pathname.match(/[0-9a-f]{32}/);
+        return match ? match[0] : '';
       }
       function getSlug() {
         return location.pathname.slice(1);
@@ -799,15 +850,16 @@ const PAGE_DESCRIPTION = 'Un écosystème, des lieux et des ressources pour rén
       const pushState = window.history.pushState;
       window.history.pushState = function(state) {
         const dest = new URL(location.protocol + location.host + arguments[2]);
-        const id = dest.pathname.slice(-32);
-        if (pages.includes(id)) {
+        const idMatch = dest.pathname.match(/[0-9a-f]{32}/);
+        const id = idMatch ? idMatch[0] : '';
+        if (id && pages.includes(id)) {
           arguments[2] = '/' + PAGE_TO_SLUG[id];
         }
         return pushState.apply(window.history, arguments);
       };
       const open = window.XMLHttpRequest.prototype.open;
       window.XMLHttpRequest.prototype.open = function() {
-        arguments[1] = arguments[1].replace('${MY_DOMAIN}', 'www.notion.so');
+        arguments[1] = arguments[1].replace('${MY_DOMAIN}', '${NOTION_SITE_DOMAIN}');
         return open.apply(this, [].slice.call(arguments));
       };
     </script>${CUSTOM_SCRIPT}<style>${CUSTOM_CSS}</style>`, {
