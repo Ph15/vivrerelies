@@ -103,7 +103,7 @@
    * Step 3.5.1: caching configuration (optional)
    * Add Cache-Control headers for better performance
    */
-  const CACHING_ENABLED = false;
+  const CACHING_ENABLED = true;
   const HTML_TTL = 60;
   const STATIC_ASSETS_TTL = 86400;
   const IMAGE_TTL = 604800;
@@ -355,7 +355,7 @@
 
   const NOTION_SITE_DOMAIN = (() => {
     try {
-      return new URL('https://succinct-scar-f20.notion.site/Sample-Web-Site-148f2fc322e74473a91fb4d90836e3ce').hostname;
+      return new URL('https://philipb.notion.site/Vivre-reli-s-fe4785129e764baf85f54bb86cad7d1e').hostname;
     } catch {
       return 'www.notion.so';
     }
@@ -477,8 +477,18 @@
       const response = await fetch(url, rewriteImageOptions());
       return applyCacheHeaders(response, url, 'image');
     } else if (slugs.indexOf(url.pathname.slice(1)) > -1) {
-      const pageId = SLUG_TO_PAGE[url.pathname.slice(1)];
-      return Response.redirect('https://' + MY_DOMAIN + '/' + pageId, 302);
+      const matchedSlug = url.pathname.slice(1);
+      const pageId = SLUG_TO_PAGE[matchedSlug];
+      url.pathname = '/' + pageId;
+      response = await fetch(url.toString(), {
+        body: request.body,
+        headers: request.headers,
+        method: request.method,
+      });
+      response = new Response(response.body, response);
+      response.headers.delete('Content-Security-Policy');
+      response.headers.delete('X-Content-Security-Policy');
+      return appendJavascript(response, SLUG_TO_PAGE, matchedSlug, url);
     } else {
       response = await fetch(url.toString(), {
         body: request.body,
@@ -842,6 +852,23 @@
         childList: true,
         subtree: true,
       });
+      setTimeout(function() {
+        if (!redirected) {
+          redirected = true;
+          updateSlug();
+          const onpopstate = window.onpopstate;
+          window.onpopstate = function() {
+            if (slugs.includes(getSlug())) {
+              const page = SLUG_TO_PAGE[getSlug()];
+              if (page) {
+                history.replaceState(history.state, 'bypass', '/' + page);
+              }
+            }
+            onpopstate.apply(this, [].slice.call(arguments));
+            updateSlug();
+          };
+        }
+      }, 2000);
       const replaceState = window.history.replaceState;
       window.history.replaceState = function(state) {
         if (arguments[1] !== 'bypass' && slugs.includes(getSlug())) return;
